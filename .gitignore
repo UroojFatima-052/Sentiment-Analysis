@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+venv/
+env/
+.venv/
+
+# Data files (too big for git)
+data/raw_txt/*/*.txt
+data/processed/*.xlsx
+app/uploads/*
+
+# Trained models (regenerate from training script)
+models/saved/*.pkl
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
