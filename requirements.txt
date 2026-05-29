@@ -1,18 +1,18 @@
-scikit-learn==1.8.0
-pandas==2.3.3
-numpy==2.3.5
-joblib==1.5.2
-openpyxl==3.1.2
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==1.26.4
+joblib==1.4.2
+openpyxl==3.1.5
 
-nltk==3.8.1
+nltk==3.9.1
 vaderSentiment==3.3.2
-textblob==0.17.1
+textblob==0.18.0
 
-transformers==4.36.2
-torch==2.1.2
+transformers==4.44.2
+torch==2.4.1
 
-beautifulsoup4==4.12.2
-requests==2.31.0
+beautifulsoup4==4.12.3
+requests==2.32.3
 
-Flask==3.0.0
-Werkzeug==3.0.1
+Flask==3.0.3
+Werkzeug==3.0.4
