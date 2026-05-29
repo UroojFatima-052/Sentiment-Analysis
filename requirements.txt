@@ -1,10 +1,23 @@
-scikit-learn>=1.3.0
-pandas>=2.0.0
-openpyxl>=3.1.0
-nltk>=3.8.0
-vaderSentiment>=3.3.2
-textblob>=0.17.1
-beautifulsoup4>=4.12.0
-requests>=2.31.0
-Flask>=3.0.0
-joblib>=1.3.0
+# Core ML and data
+scikit-learn==1.3.2
+pandas==2.1.4
+numpy==1.26.2
+joblib==1.3.2
+openpyxl==3.1.2
+
+# NLP — classical
+nltk==3.8.1
+vaderSentiment==3.3.2
+textblob==0.17.1
+
+# NLP — deep learning (BERT labeler + RNN)
+transformers==4.36.2
+torch==2.1.2
+
+# Scraping
+beautifulsoup4==4.12.2
+requests==2.31.0
+
+# Web app
+Flask==3.0.0
+Werkzeug==3.0.1
