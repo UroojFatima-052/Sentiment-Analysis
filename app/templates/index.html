@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentiment Lab — Dashboard</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon"><i data-lucide="zap"></i></div>
+      <span class="nav-logo-text">Sentiment Lab</span>
+    </a>
+    <div class="nav-right">
+      <a href="/" class="nav-link active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="/predict" class="nav-link"><i data-lucide="sparkles"></i> Live Predict</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <span class="hero-eyebrow-dot"></span>
+    A semester project · Intro to Data Science
+  </div>
+  <h1>Mobile sentiment,<br><span class="gradient-text">five ways.</span></h1>
+  <p>A side-by-side comparison of five machine learning models on real reviews from GSMArena.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="hero-stat-num">10,303</span><span class="hero-stat-label">Reviews</span></div>
+    <div class="hero-stat"><span class="hero-stat-num">5</span><span class="hero-stat-label">Models</span></div>
+    <div class="hero-stat"><span class="hero-stat-num">4</span><span class="hero-stat-label">Brands</span></div>
+    <div class="hero-stat"><span class="hero-stat-num">76.5%</span><span class="hero-stat-label">Top Acc</span></div>
+  </div>
+</section>
+
+<main class="editorial">
+
+  <div class="divider">
+    <span class="divider-line"></span><span class="divider-mark">✦</span><span class="divider-line"></span>
+  </div>
+
+  <!-- STEP ONE -->
+  <section class="step">
+    <div class="section-title-block">
+      <div class="section-kicker">Step One</div>
+      <h2 class="section-headline">Pick your <em>parameters</em></h2>
+      <p class="section-deck">Choose a dataset, labeling pipeline, and brand. Everything ties back to the 10,303-review corpus.</p>
+    </div>
+
+    <div class="controls-strip">
+      <div class="control-cell">
+        <span class="control-cell-label">Dataset</span>
+        <div class="segmented">
+          <input type="radio" id="ds-default" name="dataset" value="default" checked>
+          <label for="ds-default">Default</label>
+          <input type="radio" id="ds-upload" name="dataset" value="upload">
+          <label for="ds-upload">Upload</label>
+        </div>
+      </div>
+
+      <div class="control-cell">
+        <span class="control-cell-label">Labels</span>
+        <div class="segmented">
+          <input type="radio" id="lbl-bert" name="labels" value="bert" checked>
+          <label for="lbl-bert">BERT</label>
+          <input type="radio" id="lbl-vader" name="labels" value="vader">
+          <label for="lbl-vader">VADER</label>
+        </div>
+      </div>
+
+      <div class="control-cell">
+        <span class="control-cell-label">Brand</span>
+        <select class="select-input" id="brand-select">
+          <option value="all">All Brands</option>
+          <option value="samsung">Samsung</option>
+          <option value="iphone">iPhone</option>
+          <option value="xiaomi">Xiaomi</option>
+          <option value="mixed">Mixed</option>
+        </select>
+      </div>
+
+      <div class="control-cell">
+        <span class="control-cell-label">Model</span>
+        <select class="select-input" id="model-select" style="min-width: 200px;">
+          <option value="logistic_regression">Logistic Regression</option>
+          <option value="naive_bayes">Naive Bayes</option>
+          <option value="svm">Linear SVM</option>
+          <option value="kmeans">K-Means (Unsupervised)</option>
+          <option value="rnn">RNN (Bi-LSTM)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- hidden file input for upload -->
+    <input type="file" id="file-input" accept=".xlsx,.csv" style="display:none;">
+
+    <div class="actions-row">
+      <button class="btn btn-ghost" id="reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
+      <button class="btn btn-primary" id="run-btn"><i data-lucide="play"></i> Run Model</button>
+      <button class="btn btn-cyan" id="compare-btn"><i data-lucide="bar-chart-3"></i> Compare All 5</button>
+    </div>
+  </section>
+
+  <!-- RESULTS (hidden until run) -->
+  <div id="results-area" class="hidden">
+
+    <div class="divider">
+      <span class="divider-line"></span><span class="divider-mark">✦</span><span class="divider-line"></span>
+    </div>
+
+    <!-- STEP TWO: single model results -->
+    <section class="step" id="single-results">
+      <div class="section-title-block">
+        <div class="section-kicker">Step Two · Results</div>
+        <h2 class="section-headline">How it <em>performed</em></h2>
+      </div>
+
+      <div class="byline">
+        <p class="byline-context" id="single-byline"></p>
+      </div>
+
+      <div class="numbers-row">
+        <div class="number-cell">
+          <div class="number-cell-value gradient" id="m-acc">--</div>
+          <div class="number-cell-label">Accuracy</div>
+          <div class="number-cell-caption">test-set performance</div>
+        </div>
+        <div class="number-cell">
+          <div class="number-cell-value" id="m-prec">--</div>
+          <div class="number-cell-label">Precision</div>
+          <div class="number-cell-caption">macro-averaged</div>
+        </div>
+        <div class="number-cell">
+          <div class="number-cell-value" id="m-rec">--</div>
+          <div class="number-cell-label">Recall</div>
+          <div class="number-cell-caption">macro-averaged</div>
+        </div>
+        <div class="number-cell">
+          <div class="number-cell-value" id="m-f1">--</div>
+          <div class="number-cell-label">F1 Score</div>
+          <div class="number-cell-caption">balanced metric</div>
+        </div>
+      </div>
+
+      <div class="divider">
+        <span class="divider-line"></span><span class="divider-mark">✦</span><span class="divider-line"></span>
+      </div>
+
+      <div class="section-title-block">
+        <div class="section-kicker">Confusion Matrix</div>
+        <h2 class="section-headline">Where it <em>got it right</em></h2>
+      </div>
+
+      <div class="cm-block">
+        <table class="confusion-table">
+          <thead>
+            <tr><th></th><th>Negative</th><th>Neutral</th><th>Positive</th></tr>
+          </thead>
+          <tbody id="cm-body"></tbody>
+        </table>
+        <p class="cm-block-caption">Diagonal cells show correct predictions. Highlighted cells are where the model agreed with the labels.</p>
+      </div>
+    </section>
+
+    <!-- STEP TWO ALT: comparison chart -->
+    <section class="step hidden" id="compare-results">
+      <div class="section-title-block">
+        <div class="section-kicker">Step Two · Comparison</div>
+        <h2 class="section-headline">All five, <em>side by side</em></h2>
+      </div>
+
+      <div class="byline">
+        <p class="byline-context" id="compare-byline"></p>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas id="compare-chart"></canvas>
+      </div>
+    </section>
+
+  </div>
+
+</main>
+
+<footer class="footer">
+  Built for Intro to Data Science · SMIU
+  <div class="footer-tech">
+    <span>Flask</span><span>scikit-learn</span><span>PyTorch</span><span>RoBERTa</span><span>Chart.js</span>
+  </div>
+</footer>
+
+<div id="status" class="status-box hidden"></div>
+
+<script>
+lucide.createIcons();
+
+function setStatus(msg, type = 'loading') {
+  const box = document.getElementById('status');
+  if (!msg) { box.classList.add('hidden'); return; }
+  const icons = { loading: 'loader-2', error: 'alert-triangle', success: 'check-circle-2' };
+  box.innerHTML = `<i data-lucide="${icons[type]}"></i><span>${msg}</span>`;
+  box.className = 'status-box ' + type;
+  lucide.createIcons();
+}
+
+function getConfig() {
+  return {
+    label_source: document.querySelector('input[name="labels"]:checked').value,
+    brand: document.getElementById('brand-select').value,
+    model: document.getElementById('model-select').value,
+  };
+}
+
+// Upload toggle
+document.querySelectorAll('input[name="dataset"]').forEach(r => {
+  r.addEventListener('change', () => {
+    if (document.querySelector('input[name="dataset"]:checked').value === 'upload') {
+      document.getElementById('file-input').click();
+    }
+  });
+});
+document.getElementById('file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  setStatus('Uploading...');
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.error) { setStatus(data.error, 'error'); }
+    else { setStatus(`${data.filename} · ${data.rows} rows`, 'success'); setTimeout(() => setStatus(''), 2000); }
+  } catch (err) { setStatus('Upload failed', 'error'); }
+});
+
+// Reset
+document.getElementById('reset-btn').addEventListener('click', () => {
+  document.getElementById('ds-default').checked = true;
+  document.getElementById('lbl-bert').checked = true;
+  document.getElementById('brand-select').value = 'all';
+  document.getElementById('model-select').value = 'logistic_regression';
+  document.getElementById('results-area').classList.add('hidden');
+  setStatus('Filters reset', 'success');
+  setTimeout(() => setStatus(''), 1500);
+});
+
+// Run single model
+document.getElementById('run-btn').addEventListener('click', async () => {
+  const cfg = getConfig();
+  setStatus(`Running ${cfg.model.replace(/_/g, ' ')}...`);
+  try {
+    const res = await fetch('/api/run_model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+    });
+    const data = await res.json();
+    if (data.error) { setStatus(data.error, 'error'); return; }
+    renderSingle(data);
+    setStatus('');
+  } catch (err) { setStatus('Error: ' + err.message, 'error'); }
+});
+
+// Compare all
+document.getElementById('compare-btn').addEventListener('click', async () => {
+  const cfg = getConfig();
+  setStatus('Running all 5 models...');
+  try {
+    const res = await fetch('/api/compare_all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+    });
+    const data = await res.json();
+    if (data.error) { setStatus(data.error, 'error'); return; }
+    renderCompare(data);
+    setStatus('');
+  } catch (err) { setStatus('Error: ' + err.message, 'error'); }
+});
+
+function renderSingle(data) {
+  document.getElementById('results-area').classList.remove('hidden');
+  document.getElementById('single-results').classList.remove('hidden');
+  document.getElementById('compare-results').classList.add('hidden');
+
+  document.getElementById('single-byline').innerHTML =
+    `<strong>${data.model}</strong> on <strong>${data.label_source.toUpperCase()} labels</strong> across <strong>${data.brand}</strong> · ${data.num_reviews.toLocaleString()} held-out reviews`;
+
+  document.getElementById('m-acc').textContent = (data.accuracy * 100).toFixed(1) + '%';
+  document.getElementById('m-prec').textContent = data.precision.toFixed(3);
+  document.getElementById('m-rec').textContent = data.recall.toFixed(3);
+  document.getElementById('m-f1').textContent = data.f1.toFixed(3);
+
+  const labels = data.labels;
+  const cm = data.confusion_matrix;
+  const rowNames = { negative: 'Actual Negative', neutral: 'Actual Neutral', positive: 'Actual Positive' };
+  let html = '';
+  for (let i = 0; i < cm.length; i++) {
+    html += `<tr><td>${rowNames[labels[i]] || labels[i]}</td>`;
+    for (let j = 0; j < cm[i].length; j++) {
+      html += `<td class="${i === j ? 'cm-diag' : ''}">${cm[i][j]}</td>`;
+    }
+    html += '</tr>';
+  }
+  document.getElementById('cm-body').innerHTML = html;
+
+  document.getElementById('results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+let compareChart = null;
+function renderCompare(data) {
+  document.getElementById('results-area').classList.remove('hidden');
+  document.getElementById('single-results').classList.add('hidden');
+  document.getElementById('compare-results').classList.remove('hidden');
+
+  document.getElementById('compare-byline').innerHTML =
+    `<strong>All 5 models</strong> on <strong>${data.label_source.toUpperCase()} labels</strong> across <strong>${data.brand}</strong> · ${data.num_reviews.toLocaleString()} held-out reviews`;
+
+  const labels = data.results.map(r => r.model);
+  const ctx = document.getElementById('compare-chart').getContext('2d');
+  if (compareChart) compareChart.destroy();
+
+  compareChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Accuracy',  data: data.results.map(r => r.accuracy),  backgroundColor: 'rgba(255, 45, 146, 0.85)', borderRadius: 6 },
+        { label: 'Precision', data: data.results.map(r => r.precision), backgroundColor: 'rgba(34, 211, 238, 0.85)', borderRadius: 6 },
+        { label: 'Recall',    data: data.results.map(r => r.recall),    backgroundColor: 'rgba(167, 139, 250, 0.85)', borderRadius: 6 },
+        { label: 'F1',        data: data.results.map(r => r.f1),        backgroundColor: 'rgba(74, 222, 128, 0.85)', borderRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#b4b0c8', font: { size: 12, family: 'Inter' } } } },
+      scales: {
+        x: { ticks: { color: '#b4b0c8', font: { size: 11, family: 'Inter' } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { beginAtZero: true, max: 1.0, ticks: { color: '#b4b0c8', font: { size: 11, family: 'Inter' } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+
+  document.getElementById('results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+
+</body>
+</html>

@@ -6,18 +6,26 @@ venv/
 env/
 .venv/
 
-# Data files (too big for git)
-data/raw_txt/*/*.txt
-data/processed/*.xlsx
-app/uploads/*
-
-# Trained models (regenerate from training script)
-models/saved/*.pkl
-
-# IDE
+# Editor
 .vscode/
 .idea/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Data — regenerate via the pipeline (keep folders only)
+data/raw_txt/*
+data/processed/*
+!data/raw_txt/.gitkeep
+!data/processed/.gitkeep
+
+# Trained models — regenerate via models/train.py (keep folders only)
+models/saved_vader/*
+models/saved_bert/*
+!models/saved_vader/.gitkeep
+!models/saved_bert/.gitkeep
+
+# Runtime uploads
+app/uploads/*
+!app/uploads/.gitkeep

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentiment Lab — Live Predict</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon"><i data-lucide="zap"></i></div>
+      <span class="nav-logo-text">Sentiment Lab</span>
+    </a>
+    <div class="nav-right">
+      <a href="/" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="/predict" class="nav-link active"><i data-lucide="sparkles"></i> Live Predict</a>
+    </div>
+  </div>
+</nav>
+
+<div class="predict-wrap">
+
+  <h1 class="predict-title">What does it <em>feel</em> like?</h1>
+  <p class="predict-subtitle">Type any phone review. Five models classify it instantly.</p>
+
+  <textarea class="predict-textarea" id="review-input"
+    placeholder="The camera is amazing but the battery dies way too fast..."></textarea>
+
+  <div class="predict-actions">
+    <div class="control-cell" style="flex-direction: row; align-items: center; gap: 12px;">
+      <span class="control-cell-label">Labels</span>
+      <div class="segmented">
+        <input type="radio" id="lbl-bert-p" name="labels-p" value="bert" checked>
+        <label for="lbl-bert-p">BERT</label>
+        <input type="radio" id="lbl-vader-p" name="labels-p" value="vader">
+        <label for="lbl-vader-p">VADER</label>
+      </div>
+    </div>
+    <div class="predict-actions-right">
+      <button class="btn btn-ghost" id="clear-btn"><i data-lucide="x"></i> Clear</button>
+      <button class="btn btn-primary" id="predict-btn"><i data-lucide="sparkles"></i> Predict</button>
+    </div>
+  </div>
+
+  <!-- CONSENSUS (hidden until predict) -->
+  <div class="consensus hidden" id="consensus">
+    <div class="consensus-eyebrow">The Consensus</div>
+
+    <div class="consensus-verdict">
+      <div class="consensus-verdict-count" id="verdict-count"></div>
+      <div class="consensus-verdict-label" id="verdict-label"></div>
+    </div>
+
+    <div class="consensus-bar" id="consensus-bar"></div>
+
+    <div class="consensus-legend" id="consensus-legend"></div>
+
+    <div class="breakdown-title">Individual model verdicts</div>
+    <div class="breakdown-rows" id="breakdown-rows"></div>
+
+    <div class="cleaned-inline">
+      <div class="cleaned-inline-label">What the models actually saw</div>
+      <div class="cleaned-inline-text" id="cleaned-text"></div>
+    </div>
+  </div>
+
+  <!-- EXAMPLES -->
+  <div class="predict-examples">
+    <div class="predict-examples-title">Try these</div>
+    <div class="examples-list">
+      <button class="example-btn" data-text="This phone is amazing! Best purchase ever, love the camera.">Strong positive</button>
+      <button class="example-btn" data-text="Worst phone I have ever bought. Battery dies in two hours, terrible.">Strong negative</button>
+      <button class="example-btn" data-text="Does this phone support 5G and wireless charging?">A question</button>
+      <button class="example-btn" data-text="The camera is great but the battery life is disappointing.">Mixed feelings</button>
+      <button class="example-btn" data-text="Oh great, another phone that dies in two hours. Just what I needed.">Sarcasm</button>
+      <button class="example-btn" data-text="Has 8GB RAM, 256GB storage, Snapdragon 8 Gen 3, 5000mAh battery.">Just specs</button>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  Built for Intro to Data Science · SMIU
+  <div class="footer-tech">
+    <span>Flask</span><span>scikit-learn</span><span>PyTorch</span><span>RoBERTa</span><span>Chart.js</span>
+  </div>
+</footer>
+
+<div id="status" class="status-box hidden"></div>
+
+<script>
+lucide.createIcons();
+
+function setStatus(msg, type = 'loading') {
+  const box = document.getElementById('status');
+  if (!msg) { box.classList.add('hidden'); return; }
+  const icons = { loading: 'loader-2', error: 'alert-triangle', success: 'check-circle-2' };
+  box.innerHTML = `<i data-lucide="${icons[type]}"></i><span>${msg}</span>`;
+  box.className = 'status-box ' + type;
+  lucide.createIcons();
+}
+
+function getLabelSource() {
+  return document.querySelector('input[name="labels-p"]:checked').value;
+}
+
+const ARROW = { positive: '▲', negative: '▼', neutral: '―' };
+const ORDER = ['naive_bayes', 'logistic_regression', 'svm', 'kmeans', 'rnn'];
+
+document.getElementById('predict-btn').addEventListener('click', predict);
+document.getElementById('review-input').addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') predict();
+});
+
+async function predict() {
+  const text = document.getElementById('review-input').value.trim();
+  if (!text) { setStatus('Please enter a review first.', 'error'); return; }
+  setStatus('Running all 5 models...');
+  try {
+    const res = await fetch('/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, label_source: getLabelSource() }),
+    });
+    const data = await res.json();
+    if (data.error) { setStatus(data.error, 'error'); return; }
+    renderConsensus(data);
+    setStatus('');
+  } catch (err) { setStatus('Error: ' + err.message, 'error'); }
+}
+
+function renderConsensus(data) {
+  document.getElementById('consensus').classList.remove('hidden');
+
+  // Count votes
+  const counts = { positive: 0, negative: 0, neutral: 0 };
+  ORDER.forEach(k => {
+    const p = data.predictions[k];
+    if (p && counts[p.label] !== undefined) counts[p.label]++;
+  });
+
+  // Find winner
+  let winner = 'neutral', maxVotes = -1;
+  for (const label of ['negative', 'neutral', 'positive']) {
+    if (counts[label] > maxVotes) { maxVotes = counts[label]; winner = label; }
+  }
+  const total = ORDER.length;
+
+  // Verdict
+  document.getElementById('verdict-count').textContent = `${maxVotes} of ${total} models agree`;
+  const vl = document.getElementById('verdict-label');
+  vl.textContent = winner;
+  vl.className = 'consensus-verdict-label ' + winner;
+
+  // Bar (winner segment colored, others grey)
+  const order = ['negative', 'neutral', 'positive'];
+  let barHtml = '';
+  order.forEach(label => {
+    const c = counts[label];
+    if (c === 0) return;
+    const pct = (c / total * 100).toFixed(1);
+    const isWinner = (label === winner);
+    barHtml += `<div class="consensus-bar-segment ${isWinner ? 'winner' : ''}" style="width:${pct}%;">${c} ${label}</div>`;
+  });
+  document.getElementById('consensus-bar').innerHTML = barHtml;
+
+  // Legend
+  let legendHtml = '';
+  order.forEach(label => {
+    const isWinner = (label === winner);
+    legendHtml += `<div class="legend-item ${isWinner ? 'winner' : ''}">
+      <span class="legend-dot"></span>
+      ${label} <span class="legend-count">${counts[label]}</span>
+    </div>`;
+  });
+  document.getElementById('consensus-legend').innerHTML = legendHtml;
+
+  // Breakdown
+  let rowsHtml = '';
+  ORDER.forEach(k => {
+    const p = data.predictions[k];
+    if (!p) return;
+    rowsHtml += `<div class="breakdown-row pred-${p.label}">
+      <div class="breakdown-row-model">${p.name}</div>
+      <div class="breakdown-row-verdict">
+        <span class="breakdown-row-arrow">${ARROW[p.label] || '―'}</span>
+        <span class="breakdown-row-label">${p.label}</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('breakdown-rows').innerHTML = rowsHtml;
+
+  // Cleaned text
+  document.getElementById('cleaned-text').textContent = data.cleaned;
+
+  document.getElementById('consensus').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Clear
+document.getElementById('clear-btn').addEventListener('click', () => {
+  document.getElementById('review-input').value = '';
+  document.getElementById('consensus').classList.add('hidden');
+  setStatus('');
+});
+
+// Examples
+document.querySelectorAll('.example-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('review-input').value = btn.dataset.text;
+    predict();
+  });
+});
+</script>
+
+</body>
+</html>
