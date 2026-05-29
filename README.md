@@ -1,3 +1,13 @@
+---
+title: Sentiment Lab
+emoji: 🔮
+colorFrom: pink
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Sentiment Analysis on Mobile Phone Reviews
 
 A comparative study of five machine learning models for classifying sentiment in mobile phone reviews, built on a custom-scraped corpus of 10,000+ reviews from GSMArena. The project trains, evaluates, and serves predictions through a Flask web dashboard, comparing two independent labeling pipelines (a classical rule-based approach and a transformer-based approach) across the same data.
