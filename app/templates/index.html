@@ -227,6 +227,100 @@
 
   </div>
 
+  <div class="divider">
+    <span class="divider-line"></span><span class="divider-mark">✦</span><span class="divider-line"></span>
+  </div>
+
+  <!-- ===== ANALYZE YOUR OWN DATA (separate upload pipeline) ===== -->
+  <section class="step" id="upload-section">
+    <div class="section-title-block">
+      <div class="section-kicker">Analyze Your Own Data</div>
+      <h2 class="section-headline">Upload reviews, <em>predict sentiment</em></h2>
+    </div>
+    <div class="byline">
+      <p class="byline-context">Upload a file with a <strong>Sentence</strong> column (no labels needed). We clean the text, label it with VADER or RoBERTa, then let you run any model to see how it predicts.</p>
+    </div>
+
+    <div class="controls-strip">
+      <div class="control-cell">
+        <span class="control-cell-label">Label with</span>
+        <div class="segmented">
+          <input type="radio" id="up-lbl-vader" name="up-labels" value="vader" checked>
+          <label for="up-lbl-vader">VADER (fast)</label>
+          <input type="radio" id="up-lbl-bert" name="up-labels" value="bert">
+          <label for="up-lbl-bert">RoBERTa (slower)</label>
+        </div>
+      </div>
+      <div class="control-cell">
+        <span class="control-cell-label">File</span>
+        <input type="file" id="up-file-input" accept=".xlsx,.csv" class="file-input-styled">
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn btn-ghost" id="up-reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
+      <button class="btn btn-primary" id="up-analyze-btn"><i data-lucide="upload"></i> Clean &amp; Label</button>
+    </div>
+
+    <!-- STEP 1 RESULT: label distribution pie + numbers -->
+    <div id="up-label-results" class="hidden">
+      <div class="section-title-block" style="margin-top: 2rem;">
+        <div class="section-kicker">How it was labeled</div>
+      </div>
+      <p class="byline-context" id="up-label-byline"></p>
+      <div class="chart-wrapper" style="max-width: 360px; margin: 1rem auto;">
+        <canvas id="up-label-pie"></canvas>
+      </div>
+      <div class="numbers-row" id="up-label-numbers"></div>
+
+      <!-- STEP 2: pick a model -->
+      <div class="section-title-block" style="margin-top: 2.5rem;">
+        <div class="section-kicker">Run a model on your data</div>
+        <p class="byline-context">Pick a model to classify your uploaded reviews.</p>
+      </div>
+      <div class="model-card-grid" id="up-model-buttons">
+        <button class="model-card up-model-btn" data-model="logistic_regression">
+          <span class="model-card-icon"><i data-lucide="git-branch"></i></span>
+          <span class="model-card-name">Logistic Regression</span>
+        </button>
+        <button class="model-card up-model-btn" data-model="naive_bayes">
+          <span class="model-card-icon"><i data-lucide="percent"></i></span>
+          <span class="model-card-name">Naive Bayes</span>
+        </button>
+        <button class="model-card up-model-btn" data-model="svm">
+          <span class="model-card-icon"><i data-lucide="separator-horizontal"></i></span>
+          <span class="model-card-name">Linear SVM</span>
+        </button>
+        <button class="model-card up-model-btn" data-model="kmeans">
+          <span class="model-card-icon"><i data-lucide="circle-dot"></i></span>
+          <span class="model-card-name">K-Means</span>
+        </button>
+        <button class="model-card up-model-btn" data-model="rnn">
+          <span class="model-card-icon"><i data-lucide="brain"></i></span>
+          <span class="model-card-name">RNN (Bi-LSTM)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2 RESULT: model prediction + confusion matrix -->
+    <div id="up-model-results" class="hidden">
+      <div class="section-title-block" style="margin-top: 2rem;">
+        <div class="section-kicker">Model prediction</div>
+      </div>
+      <p class="byline-context" id="up-model-byline"></p>
+      <div class="numbers-row" id="up-model-numbers"></div>
+      <div class="cm-block" style="margin-top: 1.5rem;">
+        <table class="confusion-table">
+          <thead>
+            <tr><th></th><th>Negative</th><th>Neutral</th><th>Positive</th></tr>
+          </thead>
+          <tbody id="up-cm-body"></tbody>
+        </table>
+        <p class="cm-block-caption">Rows = the VADER/RoBERTa label. Columns = what the model predicted. Diagonal = agreement.</p>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer class="footer">
@@ -414,6 +508,131 @@ function renderCompare(data) {
   }
 
   document.getElementById('results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===== Analyze Your Own Data =====
+const SENT_COLORS = { positive: 'rgba(74,222,128,0.85)', neutral: 'rgba(167,139,250,0.85)', negative: 'rgba(255,45,146,0.85)' };
+let upToken = null;
+let upLabelPie = null;
+
+function numbersRowHTML(dist) {
+  const order = ['positive', 'neutral', 'negative'];
+  const labelTxt = { positive: 'Positive', neutral: 'Neutral', negative: 'Negative' };
+  return order.map(c =>
+    `<div class="number-cell">
+       <div class="number-cell-value">${(dist[c] || 0).toLocaleString()}</div>
+       <div class="number-cell-label">${labelTxt[c]}</div>
+     </div>`).join('');
+}
+
+document.getElementById('up-analyze-btn').addEventListener('click', async () => {
+  const fileEl = document.getElementById('up-file-input');
+  const file = fileEl.files[0];
+  if (!file) { setStatus('Choose a file first', 'error'); return; }
+  const labelSource = document.querySelector('input[name="up-labels"]:checked').value;
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('label_source', labelSource);
+
+  setStatus(labelSource === 'bert' ? 'Labeling with RoBERTa (this can take a while)...' : 'Cleaning & labeling...');
+  try {
+    const res = await fetch('/api/upload_analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.error) { setStatus(data.error, 'error'); return; }
+    upToken = data.token;
+    renderUploadLabels(data);
+    setStatus('');
+  } catch (err) { setStatus('Error: ' + err.message, 'error'); }
+});
+
+// Upload section reset
+document.getElementById('up-reset-btn').addEventListener('click', () => {
+  upToken = null;
+  document.getElementById('up-file-input').value = '';
+  document.getElementById('up-lbl-vader').checked = true;
+  document.querySelectorAll('.up-model-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('up-label-results').classList.add('hidden');
+  document.getElementById('up-model-results').classList.add('hidden');
+  if (upLabelPie) { upLabelPie.destroy(); upLabelPie = null; }
+  setStatus('Upload reset', 'success');
+  setTimeout(() => setStatus(''), 1500);
+});
+
+function renderUploadLabels(data) {
+  document.getElementById('up-label-results').classList.remove('hidden');
+  document.getElementById('up-model-results').classList.add('hidden');
+
+  document.getElementById('up-label-byline').innerHTML =
+    `Labeled <strong>${data.num_rows.toLocaleString()}</strong> sentences from <strong>${data.filename}</strong> using <strong>${data.label_source.toUpperCase()}</strong>.`;
+
+  const dist = data.label_distribution;
+  document.getElementById('up-label-numbers').innerHTML = numbersRowHTML(dist);
+
+  const ctx = document.getElementById('up-label-pie').getContext('2d');
+  if (upLabelPie) upLabelPie.destroy();
+  upLabelPie = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Positive', 'Neutral', 'Negative'],
+      datasets: [{
+        data: [dist.positive || 0, dist.neutral || 0, dist.negative || 0],
+        backgroundColor: [SENT_COLORS.positive, SENT_COLORS.neutral, SENT_COLORS.negative],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#b4b0c8', font: { size: 12, family: 'Inter' } } } }
+    }
+  });
+
+  document.getElementById('up-label-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.querySelectorAll('.up-model-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!upToken) { setStatus('Upload a file first', 'error'); return; }
+    document.querySelectorAll('.up-model-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const model = btn.getAttribute('data-model');
+    setStatus('Running ' + btn.textContent.trim() + '...');
+    try {
+      const res = await fetch('/api/upload_run_model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: upToken, model: model }),
+      });
+      const data = await res.json();
+      if (data.error) { setStatus(data.error, 'error'); return; }
+      renderUploadModel(data);
+      setStatus('');
+    } catch (err) { setStatus('Error: ' + err.message, 'error'); }
+  });
+});
+
+function renderUploadModel(data) {
+  document.getElementById('up-model-results').classList.remove('hidden');
+
+  document.getElementById('up-model-byline').innerHTML =
+    `<strong>${data.model}</strong> predicted <strong>${data.num_rows.toLocaleString()}</strong> sentences · agreement with ${data.label_source.toUpperCase()} labels: <strong>${(data.accuracy * 100).toFixed(1)}%</strong>`;
+
+  document.getElementById('up-model-numbers').innerHTML = numbersRowHTML(data.predicted_distribution);
+
+  const labels = data.labels;
+  const cm = data.confusion_matrix;
+  const rowNames = { negative: 'Actual Negative', neutral: 'Actual Neutral', positive: 'Actual Positive' };
+  let html = '';
+  for (let i = 0; i < cm.length; i++) {
+    html += `<tr><td>${rowNames[labels[i]] || labels[i]}</td>`;
+    for (let j = 0; j < cm[i].length; j++) {
+      html += `<td class="${i === j ? 'cm-diag' : ''}">${cm[i][j].toLocaleString()}</td>`;
+    }
+    html += '</tr>';
+  }
+  document.getElementById('up-cm-body').innerHTML = html;
+
+  document.getElementById('up-model-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }</script>
 
 </body>

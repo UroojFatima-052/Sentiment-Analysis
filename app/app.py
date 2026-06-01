@@ -127,9 +127,74 @@ def clean_text(text):
     return " ".join(cleaned)
 
 
+# ===== Labeling for UPLOADED data (mirrors the project's labeling pipeline) =====
+# VADER: lightweight, loaded once. BERT: heavy, lazy-loaded only when first used.
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+_vader = SentimentIntensityAnalyzer()
+
+_bert_labeler = {"tokenizer": None, "model": None}  # filled on first BERT use
+
+POS_THR = config.POSITIVE_THRESHOLD
+NEG_THR = config.NEGATIVE_THRESHOLD
+
+
+def _score_to_label(score):
+    if score > POS_THR:
+        return "positive"
+    if score < NEG_THR:
+        return "negative"
+    return "neutral"
+
+
+def vader_label_sentences(raw_sentences):
+    """Label uploaded sentences with VADER (uses RAW text, like the pipeline)."""
+    return [_score_to_label(_vader.polarity_scores(str(t))["compound"])
+            for t in raw_sentences]
+
+
+def _ensure_bert_loaded():
+    if _bert_labeler["model"] is None:
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
+        name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+        print("  Loading RoBERTa labeler for uploads (first use, ~500MB)...")
+        _bert_labeler["tokenizer"] = AutoTokenizer.from_pretrained(name)
+        m = AutoModelForSequenceClassification.from_pretrained(name)
+        m.eval()
+        _bert_labeler["model"] = m
+
+
+def bert_label_sentences(raw_sentences):
+    """Label uploaded sentences with RoBERTa (uses RAW text, like the pipeline)."""
+    _ensure_bert_loaded()
+    tok = _bert_labeler["tokenizer"]
+    model = _bert_labeler["model"]
+    id2label = {0: "negative", 1: "neutral", 2: "positive"}
+    out = []
+    texts = [str(t) for t in raw_sentences]
+    with torch.no_grad():
+        for i in range(0, len(texts), 32):
+            batch = texts[i:i + 32]
+            enc = tok(batch, return_tensors="pt", padding=True,
+                      truncation=True, max_length=256)
+            logits = model(**enc).logits
+            preds = torch.argmax(logits, dim=1).cpu().tolist()
+            out.extend(id2label[p] for p in preds)
+    return out
+
+
+def label_uploaded(raw_sentences, label_source):
+    if label_source == "bert":
+        return bert_label_sentences(raw_sentences)
+    return vader_label_sentences(raw_sentences)
+
+
+# In-memory cache of uploaded+labeled data, keyed by a token we hand the client.
+# Avoids re-labeling (esp. slow BERT) every time the user picks a model.
+UPLOAD_CACHE = {}
+
+
 # ===== Load all models once at startup =====
 print("Loading models...")
-
 LOADED_MODELS = {}
 for label_source, models_dir in [("vader", config.MODELS_DIR_VADER),
                                   ("bert", config.MODELS_DIR_BERT)]:
@@ -387,6 +452,106 @@ def api_predict():
         "cleaned": cleaned,
         "label_source": label_source,
         "predictions": predictions,
+    })
+
+
+@app.route("/api/upload_analyze", methods=["POST"])
+def api_upload_analyze():
+    """
+    Step 1 of the upload pipeline.
+    Takes a file of sentences (no labels needed) + label_source (vader/bert).
+    Cleans -> labels with VADER/BERT (like the real pipeline) -> returns the
+    label distribution (for the first pie + numbers) and a token for step 2.
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    f = request.files["file"]
+    if f.filename == "":
+        return jsonify({"error": "Empty filename"}), 400
+
+    ext = f.filename.rsplit(".", 1)[-1].lower()
+    if ext not in config.ALLOWED_EXTENSIONS:
+        return jsonify({"error": f"File type .{ext} not allowed"}), 400
+
+    label_source = request.form.get("label_source", "vader")
+
+    safe_name = secure_filename(f.filename)
+    save_path = os.path.join(config.UPLOAD_DIR, safe_name)
+    f.save(save_path)
+
+    try:
+        df = pd.read_csv(save_path) if ext == "csv" else pd.read_excel(save_path)
+    except Exception as e:
+        return jsonify({"error": f"Could not read file: {e}"}), 400
+
+    if "Sentence" not in df.columns:
+        return jsonify({"error": "File must have a 'Sentence' column"}), 400
+
+    df = df.dropna(subset=["Sentence"]).reset_index(drop=True)
+    if len(df) == 0:
+        return jsonify({"error": "No sentences found in file"}), 400
+
+    raw = df["Sentence"].astype(str).tolist()
+    cleaned = [clean_text(t) for t in raw]
+
+    # Generate labels with the chosen labeler (this is the pipeline's labeling step)
+    labels = label_uploaded(raw, label_source)
+
+    # Cache cleaned text + generated labels for the model step
+    token = secure_filename(safe_name) + "__" + label_source
+    UPLOAD_CACHE[token] = {
+        "cleaned": cleaned,
+        "labels": labels,
+        "label_source": label_source,
+    }
+
+    dist = {k: int(v) for k, v in pd.Series(labels).value_counts().items()}
+    for c in ["positive", "neutral", "negative"]:
+        dist.setdefault(c, 0)
+
+    return jsonify({
+        "token": token,
+        "filename": safe_name,
+        "label_source": label_source,
+        "num_rows": len(df),
+        "label_distribution": dist,
+    })
+
+
+@app.route("/api/upload_run_model", methods=["POST"])
+def api_upload_run_model():
+    """
+    Step 2 of the upload pipeline.
+    Takes the token + chosen model. Runs the trained model on the uploaded
+    sentences and compares its predictions against the VADER/BERT labels
+    generated in step 1 -> confusion matrix + metrics + predicted distribution.
+    """
+    data = request.get_json()
+    token = data.get("token")
+    model_name = data.get("model", "logistic_regression")
+
+    cached = UPLOAD_CACHE.get(token)
+    if not cached:
+        return jsonify({"error": "Upload expired. Please re-upload the file."}), 400
+
+    label_source = cached["label_source"]
+    cleaned = cached["cleaned"]
+    y_true = np.array(cached["labels"])  # the VADER/BERT labels
+
+    y_pred = get_predictions(model_name, label_source, cleaned)
+    metrics = compute_metrics(y_true, y_pred)
+
+    pred_dist = {k: int(v) for k, v in pd.Series(y_pred).value_counts().items()}
+    for c in ["positive", "neutral", "negative"]:
+        pred_dist.setdefault(c, 0)
+
+    return jsonify({
+        "model": MODEL_DISPLAY[model_name],
+        "model_key": model_name,
+        "label_source": label_source,
+        "num_rows": len(cleaned),
+        "predicted_distribution": pred_dist,
+        **metrics,
     })
 
 
