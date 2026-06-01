@@ -187,11 +187,27 @@
       <div class="section-title-block" style="margin-top: 2rem;">
         <div class="section-kicker">Average Across All 5 Models</div>
       </div>
-      <div class="metrics-grid">
-        <div class="metric-card"><div class="metric-label">Avg Accuracy</div><div class="metric-value" id="avg-acc">—</div></div>
-        <div class="metric-card"><div class="metric-label">Avg Precision</div><div class="metric-value" id="avg-prec">—</div></div>
-        <div class="metric-card"><div class="metric-label">Avg Recall</div><div class="metric-value" id="avg-rec">—</div></div>
-        <div class="metric-card"><div class="metric-label">Avg F1</div><div class="metric-value" id="avg-f1">—</div></div>
+      <div class="numbers-row">
+        <div class="number-cell">
+          <div class="number-cell-value gradient" id="avg-acc">--</div>
+          <div class="number-cell-label">Avg Accuracy</div>
+          <div class="number-cell-caption">across 5 models</div>
+        </div>
+        <div class="number-cell">
+          <div class="number-cell-value" id="avg-prec">--</div>
+          <div class="number-cell-label">Avg Precision</div>
+          <div class="number-cell-caption">macro-averaged</div>
+        </div>
+        <div class="number-cell">
+          <div class="number-cell-value" id="avg-rec">--</div>
+          <div class="number-cell-label">Avg Recall</div>
+          <div class="number-cell-caption">macro-averaged</div>
+        </div>
+        <div class="number-cell">
+          <div class="number-cell-value" id="avg-f1">--</div>
+          <div class="number-cell-label">Avg F1</div>
+          <div class="number-cell-caption">balanced metric</div>
+        </div>
       </div>
 
       <div class="section-title-block" style="margin-top: 2rem;">
