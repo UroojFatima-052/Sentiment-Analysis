@@ -183,6 +183,30 @@
       <div class="chart-wrapper">
         <canvas id="compare-chart"></canvas>
       </div>
+
+      <div class="section-title-block" style="margin-top: 2rem;">
+        <div class="section-kicker">Average Across All 5 Models</div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-label">Avg Accuracy</div><div class="metric-value" id="avg-acc">—</div></div>
+        <div class="metric-card"><div class="metric-label">Avg Precision</div><div class="metric-value" id="avg-prec">—</div></div>
+        <div class="metric-card"><div class="metric-label">Avg Recall</div><div class="metric-value" id="avg-rec">—</div></div>
+        <div class="metric-card"><div class="metric-label">Avg F1</div><div class="metric-value" id="avg-f1">—</div></div>
+      </div>
+
+      <div class="section-title-block" style="margin-top: 2rem;">
+        <div class="section-kicker">Overall Confusion Matrix</div>
+        <p class="byline-context">Combined predictions of all 5 models on the held-out test set.</p>
+      </div>
+      <div class="cm-block">
+        <table class="confusion-table">
+          <thead>
+            <tr><th></th><th>Negative</th><th>Neutral</th><th>Positive</th></tr>
+          </thead>
+          <tbody id="overall-cm-body"></tbody>
+        </table>
+        <p class="cm-block-caption">Sum of all 5 models' predictions. Diagonal cells are correct predictions.</p>
+      </div>
     </section>
 
   </div>
@@ -349,9 +373,32 @@ function renderCompare(data) {
     }
   });
 
+  // Average metrics across all 5 models
+  if (data.average) {
+    document.getElementById('avg-acc').textContent  = (data.average.accuracy * 100).toFixed(1) + '%';
+    document.getElementById('avg-prec').textContent = data.average.precision.toFixed(3);
+    document.getElementById('avg-rec').textContent  = data.average.recall.toFixed(3);
+    document.getElementById('avg-f1').textContent   = data.average.f1.toFixed(3);
+  }
+
+  // Overall confusion matrix (sum of all 5 models)
+  if (data.overall_cm) {
+    const labels = data.labels;
+    const cm = data.overall_cm;
+    const rowNames = { negative: 'Actual Negative', neutral: 'Actual Neutral', positive: 'Actual Positive' };
+    let html = '';
+    for (let i = 0; i < cm.length; i++) {
+      html += `<tr><td>${rowNames[labels[i]] || labels[i]}</td>`;
+      for (let j = 0; j < cm[i].length; j++) {
+        html += `<td class="${i === j ? 'cm-diag' : ''}">${cm[i][j].toLocaleString()}</td>`;
+      }
+      html += '</tr>';
+    }
+    document.getElementById('overall-cm-body').innerHTML = html;
+  }
+
   document.getElementById('results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-</script>
+}</script>
 
 </body>
 </html>

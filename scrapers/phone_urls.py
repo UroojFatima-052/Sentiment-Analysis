@@ -26,14 +26,23 @@ PHONE_URLS = {
         # "https://www.gsmarena.com/samsung_galaxy_a32-reviews-10662.php",
         # "https://www.gsmarena.com/samsung_galaxy_m31-reviews-10075.php",
 
-        "https://www.gsmarena.com/samsung_galaxy_s20-reviews-9876.php",
-        "https://www.gsmarena.com/samsung_galaxy_s10-reviews-9536.php",
-        "https://www.gsmarena.com/samsung_galaxy_s10_plus-reviews-9535.php",
-        "https://www.gsmarena.com/samsung_galaxy_note10-reviews-9787.php",
-        "https://www.gsmarena.com/samsung_galaxy_note10+-reviews-9788.php",
-        "https://www.gsmarena.com/samsung_galaxy_a50-reviews-9554.php",
-        "https://www.gsmarena.com/samsung_galaxy_a70-reviews-9650.php",
-        "https://www.gsmarena.com/samsung_galaxy_m21-reviews-10131.php",
+        # "https://www.gsmarena.com/samsung_galaxy_s20-reviews-9876.php",
+        # "https://www.gsmarena.com/samsung_galaxy_s10-reviews-9536.php",
+        # "https://www.gsmarena.com/samsung_galaxy_s10_plus-reviews-9535.php",
+        # "https://www.gsmarena.com/samsung_galaxy_note10-reviews-9787.php",
+        # "https://www.gsmarena.com/samsung_galaxy_note10+-reviews-9788.php",
+        # "https://www.gsmarena.com/samsung_galaxy_a50-reviews-9554.php",
+        # "https://www.gsmarena.com/samsung_galaxy_a70-reviews-9650.php",
+        # "https://www.gsmarena.com/samsung_galaxy_m21-reviews-10131.php",
+
+        "https://www.gsmarena.com/samsung_galaxy_s25_ultra-reviews-13322.php",   
+        "https://www.gsmarena.com/samsung_galaxy_a35-reviews-12705.php",          
+        "https://www.gsmarena.com/samsung_galaxy_a25-reviews-12555.php",
+        "https://www.gsmarena.com/samsung_galaxy_a15_5g-reviews-12638.php",
+
+        "https://www.gsmarena.com/samsung_galaxy_s21_fe_5g-reviews-10954.php",   
+        "https://www.gsmarena.com/samsung_galaxy_s20_fe_5g-reviews-10377.php",
+
     ],
 
     "iphone": [
@@ -52,12 +61,18 @@ PHONE_URLS = {
         # "https://www.gsmarena.com/apple_iphone_xr-reviews-9320.php",
         # "https://www.gsmarena.com/apple_iphone_xs_max-reviews-9319.php",
 
-        "https://www.gsmarena.com/apple_iphone_xs-reviews-9318.php",
-        "https://www.gsmarena.com/apple_iphone_8_plus-reviews-8730.php",
-        "https://www.gsmarena.com/apple_iphone_7_plus-reviews-8275.php",
-        "https://www.gsmarena.com/apple_iphone_6s-reviews-7242.php",
-        "https://www.gsmarena.com/apple_iphone_6s_plus-reviews-7243.php",
-        "https://www.gsmarena.com/apple_iphone_se-reviews-7969.php",
+        # "https://www.gsmarena.com/apple_iphone_xs-reviews-9318.php",
+        # "https://www.gsmarena.com/apple_iphone_8_plus-reviews-8730.php",
+        # "https://www.gsmarena.com/apple_iphone_7_plus-reviews-8275.php",
+        # "https://www.gsmarena.com/apple_iphone_6s-reviews-7242.php",
+        # "https://www.gsmarena.com/apple_iphone_6s_plus-reviews-7243.php",
+        # "https://www.gsmarena.com/apple_iphone_se-reviews-7969.php",
+
+        "https://www.gsmarena.com/apple_iphone_16_pro_max-reviews-13123.php",     
+        "https://www.gsmarena.com/apple_iphone_16_pro-reviews-13315.php",
+
+        "https://www.gsmarena.com/apple_iphone_12_pro_max-reviews-10237.php",    
+        "https://www.gsmarena.com/apple_iphone_13_pro-reviews-11102.php",
     ],
 
     "xiaomi": [
@@ -74,14 +89,20 @@ PHONE_URLS = {
         # "https://www.gsmarena.com/xiaomi_redmi_9-reviews-10233.php",
         # "https://www.gsmarena.com/xiaomi_redmi_note_9s-reviews-10145.php",
 
-        "https://www.gsmarena.com/xiaomi_redmi_note_6_pro-reviews-9301.php",
-        "https://www.gsmarena.com/xiaomi_redmi_note_5_pro-reviews-9081.php",
-        "https://www.gsmarena.com/xiaomi_mi_8-reviews-9065.php",
-        "https://www.gsmarena.com/xiaomi_mi_a2-reviews-9258.php",
-        "https://www.gsmarena.com/xiaomi_redmi_6_pro-reviews-9241.php",
-        "https://www.gsmarena.com/xiaomi_mi_max_3-reviews-9197.php",
-        "https://www.gsmarena.com/xiaomi_redmi_5_plus_(redmi_note_5)-reviews-8973.php",
-        "https://www.gsmarena.com/xiaomi_pocophone_f1-reviews-9293.php",
+        # "https://www.gsmarena.com/xiaomi_redmi_note_6_pro-reviews-9301.php",
+        # "https://www.gsmarena.com/xiaomi_redmi_note_5_pro-reviews-9081.php",
+        # "https://www.gsmarena.com/xiaomi_mi_8-reviews-9065.php",
+        # "https://www.gsmarena.com/xiaomi_mi_a2-reviews-9258.php",
+        # "https://www.gsmarena.com/xiaomi_redmi_6_pro-reviews-9241.php",
+        # "https://www.gsmarena.com/xiaomi_mi_max_3-reviews-9197.php",
+        # "https://www.gsmarena.com/xiaomi_redmi_5_plus_(redmi_note_5)-reviews-8973.php",
+        # "https://www.gsmarena.com/xiaomi_pocophone_f1-reviews-9293.php",
+
+        "https://www.gsmarena.com/xiaomi_poco_f6-reviews-13000.php",
+        "https://www.gsmarena.com/xiaomi_14t_pro-reviews-13328.php",
+        "https://www.gsmarena.com/xiaomi_redmi_note_14_5g_(global)-reviews-13615.php",
+
+        "https://www.gsmarena.com/xiaomi_poco_x6-reviews-12723.php",
     ],
 
     "mixed": [
@@ -108,16 +129,30 @@ PHONE_URLS = {
         # "https://www.gsmarena.com/oppo_find_x2-reviews-10042.php",
         # "https://www.gsmarena.com/huawei_p40_pro-reviews-10050.php",
 
-        "https://www.gsmarena.com/oneplus_6-reviews-9159.php",
-        "https://www.gsmarena.com/oneplus_5-reviews-8647.php",
-        "https://www.gsmarena.com/google_pixel_2_xl-reviews-8856.php",
-        "https://www.gsmarena.com/google_pixel_3-reviews-9335.php",
-        "https://www.gsmarena.com/huawei_p20-reviews-9106.php",
-        "https://www.gsmarena.com/huawei_mate_10_pro-reviews-8889.php",
-        "https://www.gsmarena.com/oppo_f9_(f9_pro)-reviews-9275.php",
-        "https://www.gsmarena.com/realme_2_pro-reviews-9351.php",
+        # "https://www.gsmarena.com/oneplus_6-reviews-9159.php",
+        # "https://www.gsmarena.com/oneplus_5-reviews-8647.php",
+        # "https://www.gsmarena.com/google_pixel_2_xl-reviews-8856.php",
+        # "https://www.gsmarena.com/google_pixel_3-reviews-9335.php",
+        # "https://www.gsmarena.com/huawei_p20-reviews-9106.php",
+        # "https://www.gsmarena.com/huawei_mate_10_pro-reviews-8889.php",
+        # "https://www.gsmarena.com/oppo_f9_(f9_pro)-reviews-9275.php",
+        # "https://www.gsmarena.com/realme_2_pro-reviews-9351.php",
+
+        "https://www.gsmarena.com/oneplus_12-reviews-12725.php",              
+        "https://www.gsmarena.com/google_pixel_8_pro-reviews-12545.php",        
+
+        "https://www.gsmarena.com/nothing_phone_(2a)-reviews-12760.php",
+        "https://www.gsmarena.com/nothing_phone_(1)-reviews-11636.php",
+        "https://www.gsmarena.com/google_pixel_7_pro-reviews-11908.php",
+        "https://www.gsmarena.com/realme_12_pro-reviews-12810.php",
+        "https://www.gsmarena.com/realme_12+-reviews-12821.php",
+        "https://www.gsmarena.com/oppo_reno12_pro-reviews-13132.php",
+        "https://www.gsmarena.com/realme_13+-reviews-13255.php",
+        "https://www.gsmarena.com/motorola_edge_50_fusion-reviews-12871.php",
+        "https://www.gsmarena.com/motorola_edge_50_neo-reviews-13224.php",
     ],
 }
 
-# Number of pages to scrape per phone (each page has ~30 reviews)
-PAGES_PER_PHONE = 10
+# Number of pages to scrape per phone 
+PAGES_PER_PHONE = 30
+

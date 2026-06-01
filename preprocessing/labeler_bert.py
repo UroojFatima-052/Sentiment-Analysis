@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
 
-MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment-latest"  
 BATCH_SIZE = 32  # process this many reviews at once for speed
 MAX_LENGTH = 256  # truncate longer reviews
 

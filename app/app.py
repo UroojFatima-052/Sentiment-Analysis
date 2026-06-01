@@ -324,7 +324,9 @@ def api_compare_all():
     cleaned = test_df["Cleaned_Sentence"].astype(str).tolist()
     y_true = test_df["Final_Label"].values
 
+    labels = ["negative", "neutral", "positive"]
     results = []
+    overall_cm = np.zeros((len(labels), len(labels)), dtype=int)
     for model_name in ALL_MODELS:
         y_pred = get_predictions(model_name, label_source, cleaned)
         m = compute_metrics(y_true, y_pred)
@@ -336,12 +338,26 @@ def api_compare_all():
             "recall": m["recall"],
             "f1": m["f1"],
         })
+        # accumulate this model's confusion matrix into the overall total
+        overall_cm += np.array(m["confusion_matrix"])
+
+    # Average metrics across all 5 models
+    n = len(results)
+    average = {
+        "accuracy": round(sum(r["accuracy"] for r in results) / n, 4),
+        "precision": round(sum(r["precision"] for r in results) / n, 4),
+        "recall": round(sum(r["recall"] for r in results) / n, 4),
+        "f1": round(sum(r["f1"] for r in results) / n, 4),
+    }
 
     return jsonify({
         "label_source": label_source,
         "brand": brand,
         "num_reviews": len(test_df),
         "results": results,
+        "average": average,
+        "overall_cm": overall_cm.tolist(),
+        "labels": labels,
     })
 
 
