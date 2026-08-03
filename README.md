@@ -12,6 +12,8 @@ pinned: false
 
 A comparative study of five machine learning models for classifying sentiment in mobile phone reviews, built on a custom-scraped corpus of 10,000+ reviews from GSMArena. The project trains, evaluates, and serves predictions through a Flask web dashboard, comparing two independent labeling pipelines (a classical rule-based approach and a transformer-based approach) across the same data.
 
+**Live demo:** [huggingface.co/spaces/UroojFatima-22/Sentiment-Analysis](https://huggingface.co/spaces/UroojFatima-22/Sentiment-Analysis)
+
 ## What this project does
 
 - Scrapes user reviews for popular phones across four brand categories (Samsung, iPhone, Xiaomi, Mixed)
@@ -29,10 +31,6 @@ A comparative study of five machine learning models for classifying sentiment in
 - Serves a Flask web app with two interfaces:
   - A dashboard for running individual models or comparing all five
   - A live prediction page that shows what all five models predict for a typed-in review, in real time
-
-## Live demo
-
-A working version of this app is hosted at: [https://huggingface.co/spaces/UroojFatima-22/Sentiment-Analysis](https://huggingface.co/spaces/UroojFatima-22/Sentiment-Analysis)
 
 ## Tech stack
 
@@ -153,3 +151,13 @@ All paths, hyperparameters, and thresholds are centralized in `config.py`. Notab
 - The pipeline is fully reproducible: same `random_state` everywhere, same TF-IDF settings shared between classical models and K-Means, same hyperparameters in `train.py`.
 - BERT labels are higher-quality (manual audit indicates ~83% accuracy on this corpus) but harder to predict from bag-of-words features, so BERT-trained models show lower raw accuracy than VADER-trained ones. Macro-F1 is the more honest metric for comparing across labeling pipelines because it weights all three sentiment classes equally rather than rewarding majority-class predictions.
 - The Flask app loads all ten models at startup, which takes a few seconds. After that, predictions and evaluations are fast.
+
+---
+
+## License
+
+MIT © Urooj Fatima
+
+## Author
+
+Built by **Urooj Fatima** — [LinkedIn](https://www.linkedin.com/in/urooj-022-fatima) · [Email](mailto:uroojfatima6789@gmail.com)
